@@ -15,15 +15,15 @@
           <MetricCard label="Average Progress" :value="`${stats.averageProgress}%`" />
         </section>
 
-        <section v-if="selectedSection === 'overview'" class="surface-card">
+        <GlassCard v-if="selectedSection === 'overview'" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Family Snapshot</p>
+              <PillBadge class="eyebrow">Family Snapshot</PillBadge>
               <h2>Your kids at a glance</h2>
             </div>
-            <button class="ghost-button" type="button" @click="selectedSection = 'kids'">
+            <ActionButton variant="ghost" @click="selectedSection = 'kids'">
               Manage Family
-            </button>
+            </ActionButton>
           </div>
           <div class="assignment-list">
             <article v-for="kid in kids" :key="kid.id" class="assignment-row">
@@ -37,17 +37,17 @@
               </div>
             </article>
           </div>
-        </section>
+        </GlassCard>
 
-        <section v-if="selectedSection === 'kids' && !isEditingKid" class="surface-card">
+        <GlassCard v-if="selectedSection === 'kids' && !isEditingKid" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Family Management</p>
+              <PillBadge class="eyebrow">Family Management</PillBadge>
               <h2>My kids</h2>
             </div>
-            <button class="primary-button" type="button" @click="startAddingKid">
+            <ActionButton @click="startAddingKid">
               ➕ Add Kid
-            </button>
+            </ActionButton>
           </div>
           <div class="assignment-list">
             <article v-for="kid in kids" :key="kid.id" class="assignment-row category-row">
@@ -69,12 +69,12 @@
               </div>
             </article>
           </div>
-        </section>
+        </GlassCard>
 
-        <section v-if="selectedSection === 'kids' && isEditingKid" class="surface-card">
+        <GlassCard v-if="selectedSection === 'kids' && isEditingKid" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Profile Editor</p>
+              <PillBadge class="eyebrow">Profile Editor</PillBadge>
               <h2>{{ kidForm.id ? 'Edit kid profile' : 'Add a new kid' }}</h2>
             </div>
           </div>
@@ -103,16 +103,16 @@
             </label>
 
             <div class="card-actions" style="grid-column: 1 / -1; margin-top: 1rem; justify-content: flex-end;">
-              <button class="ghost-button" type="button" @click="isEditingKid = false">Cancel</button>
-              <button class="primary-button" type="submit">{{ kidForm.id ? 'Update Kid' : 'Add Kid' }}</button>
+              <ActionButton variant="ghost" @click="isEditingKid = false">Cancel</ActionButton>
+              <ActionButton type="submit">{{ kidForm.id ? 'Update Kid' : 'Add Kid' }}</ActionButton>
             </div>
           </form>
-        </section>
+        </GlassCard>
 
-        <section v-if="selectedSection === 'assignments'" class="surface-card">
+        <GlassCard v-if="selectedSection === 'assignments'" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Assign Learning</p>
+              <PillBadge class="eyebrow">Assign Learning</PillBadge>
               <h2>Create a new activity assignment</h2>
             </div>
           </div>
@@ -122,12 +122,12 @@
             :parent-id="session.id"
             @assign="assignActivity"
           />
-        </section>
+        </GlassCard>
 
-        <section v-if="selectedSection === 'assignments'" class="surface-card">
+        <GlassCard v-if="selectedSection === 'assignments'" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Current Progress</p>
+              <PillBadge class="eyebrow">Current Progress</PillBadge>
               <h2>Assignments for your kids</h2>
             </div>
           </div>
@@ -148,12 +148,12 @@
               </div>
             </article>
           </div>
-        </section>
+        </GlassCard>
 
-        <section v-if="selectedSection === 'reports'" class="surface-card">
+        <GlassCard v-if="selectedSection === 'reports'" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Reports</p>
+              <PillBadge class="eyebrow">Reports</PillBadge>
               <h2>Progress by child</h2>
             </div>
           </div>
@@ -169,7 +169,7 @@
               </div>
             </article>
           </div>
-        </section>
+        </GlassCard>
       </div>
     </div>
   </AppShell>
@@ -179,6 +179,9 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppShell from '../../shared/ui/AppShell.vue'
+import GlassCard from '../../shared/ui/GlassCard.vue'
+import PillBadge from '../../shared/ui/PillBadge.vue'
+import ActionButton from '../../shared/ui/ActionButton.vue'
 import MetricCard from '../../widgets/dashboard/MetricCard.vue'
 import AssignmentComposer from '../../features/assignment/AssignmentComposer.vue'
 import { readSession, clearSession } from '../../features/auth/session.js'
@@ -335,3 +338,125 @@ function logout() {
   router.push('/login')
 }
 </script>
+
+<style scoped>
+.page-workspace {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+}
+
+.parents-workspace {
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.admin-workspace {
+  display: grid;
+  grid-template-rows: auto;
+  gap: 1rem;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-workspace > section {
+  min-height: 0;
+  overflow: visible;
+}
+
+.metrics-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.assignment-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.assignment-row {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(24, 78, 122, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.assignment-row:last-child {
+  border-bottom: 0;
+}
+
+.category-row {
+  flex-wrap: wrap;
+}
+
+.category-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all 200ms;
+  border-radius: 4px;
+}
+
+.icon-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.1);
+}
+
+.icon-button.delete:hover {
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.activity-form {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+label {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 700;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 820px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .activity-form {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

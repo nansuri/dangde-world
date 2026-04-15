@@ -1,9 +1,9 @@
 <template>
   <div class="login-page">
-    <div class="login-hero">
-      <div class="hero-badge">Kahoot-inspired learning UI</div>
+    <GlassCard class="login-hero">
+      <PillBadge>Kahoot-inspired learning UI</PillBadge>
       <h2>Learning feels like a game, and every role gets its own experience.</h2>
-    </div>
+    </GlassCard>
 
     <LoginPanel :users="users" :loading="loading" :error="error" @submit="handleLogin" />
   </div>
@@ -12,6 +12,8 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import GlassCard from '../../shared/ui/GlassCard.vue'
+import PillBadge from '../../shared/ui/PillBadge.vue'
 import LoginPanel from '../../features/auth/LoginPanel.vue'
 import { loginUser, listUsers } from '../../entities/user/api.js'
 import { saveSession } from '../../features/auth/session.js'
@@ -45,3 +47,63 @@ async function handleLogin(userId) {
   }
 }
 </script>
+
+<style scoped>
+.login-page {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 2rem;
+  padding:
+    max(1.25rem, var(--safe-top))
+    max(1.25rem, var(--safe-right))
+    max(1.25rem, var(--safe-bottom))
+    max(1.25rem, var(--safe-left));
+  align-items: stretch;
+}
+
+.login-hero {
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.42)),
+    linear-gradient(135deg, #ff8b3d 0%, #ffd85d 50%, #71dbff 100%);
+  color: #15314b;
+}
+
+.login-hero h2 {
+  font-size: clamp(2.5rem, 4vw, 4.75rem);
+  line-height: 0.95;
+  margin: 1rem 0 0;
+  max-width: 10ch;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 1180px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .login-hero {
+    min-height: 260px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 820px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero {
+    min-height: 220px;
+    padding: 2rem;
+  }
+}
+</style>

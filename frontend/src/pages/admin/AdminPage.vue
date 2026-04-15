@@ -12,7 +12,7 @@
         class="admin-workspace"
         :class="{ 'admin-workspace-management': selectedCurriculumPage === 'management' }"
       >
-        <section class="surface-card admin-subnav-shell">
+        <GlassCard tag="section" class="admin-subnav-shell">
           <div class="admin-subnav">
             <button
               v-for="item in curriculumSubPages"
@@ -26,25 +26,25 @@
               <span>{{ item.label }}</span>
             </button>
           </div>
-        </section>
+        </GlassCard>
 
-        <section
+        <GlassCard
           v-if="selectedCurriculumPage === 'management'"
-          class="surface-card admin-management-shell"
+          tag="section"
+          class="admin-management-shell"
         >
           <div class="section-head">
             <div>
-              <p class="eyebrow">Curriculum Management</p>
+              <PillBadge class="eyebrow">Curriculum Management</PillBadge>
               <h2>{{ editingActivity ? 'Edit activity' : 'Create a new activity' }}</h2>
             </div>
-            <button
+            <ActionButton
               v-if="editingActivity"
-              class="ghost-button"
-              type="button"
+              variant="ghost"
               @click="startCreating"
             >
               New Activity
-            </button>
+            </ActionButton>
           </div>
 
           <ActivityTemplates
@@ -58,16 +58,16 @@
             :submit-label="editingActivity ? 'Update Activity' : 'Add Activity'"
             @submit="handleActivitySubmit"
           />
-        </section>
+        </GlassCard>
 
-        <section v-if="selectedCurriculumPage === 'library'" class="surface-card">
+        <GlassCard v-if="selectedCurriculumPage === 'library'" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Activity Library</p>
+              <PillBadge class="eyebrow">Activity Library</PillBadge>
               <h2>Curriculum catalogue</h2>
             </div>
             <div class="admin-library-summary">
-              <span class="status-chip">Page {{ currentPage }} / {{ totalPages }}</span>
+              <PillBadge class="status-chip">Page {{ currentPage }} / {{ totalPages }}</PillBadge>
               <span class="muted">{{ activities.length }} total activities</span>
             </div>
           </div>
@@ -95,15 +95,15 @@
               <span>{{ activity.difficulty }}</span>
               <span>{{ activity.ageGroup }}</span>
               <div class="admin-row-actions">
-                <button class="ghost-button" type="button" @click="editActivity(activity)">Edit</button>
+                <ActionButton variant="ghost" @click="editActivity(activity)">Edit</ActionButton>
               </div>
             </article>
           </div>
 
           <div class="admin-pagination">
-            <button class="ghost-button" type="button" :disabled="currentPage === 1" @click="previousPage">
+            <ActionButton variant="ghost" :disabled="currentPage === 1" @click="previousPage">
               Previous
-            </button>
+            </ActionButton>
             <div class="admin-page-indicators">
               <button
                 v-for="page in visiblePages"
@@ -116,29 +116,28 @@
                 {{ page }}
               </button>
             </div>
-            <button
-              class="ghost-button"
-              type="button"
+            <ActionButton
+              variant="ghost"
               :disabled="currentPage === totalPages"
               @click="nextPage"
             >
               Next
-            </button>
+            </ActionButton>
           </div>
-        </section>
+        </GlassCard>
       </div>
 
       <template v-if="selectedSection === 'categories'">
         <div class="admin-workspace">
-        <section v-if="!editingCategoryId" class="surface-card">
+        <GlassCard v-if="!editingCategoryId" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Categories</p>
+              <PillBadge class="eyebrow">Categories</PillBadge>
               <h2>Learning structure</h2>
             </div>
-            <button class="primary-button" type="button" @click="startCreatingCategory">
+            <ActionButton @click="startCreatingCategory">
               ➕ New Category
-            </button>
+            </ActionButton>
           </div>
           <div class="assignment-list">
             <article
@@ -164,17 +163,17 @@
               </div>
             </article>
           </div>
-        </section>
+        </GlassCard>
 
-        <section v-if="rootCategories.length > 0 && !editingCategoryId" class="surface-card">
+        <GlassCard v-if="rootCategories.length > 0 && !editingCategoryId" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Sub-Categories</p>
+              <PillBadge class="eyebrow">Sub-Categories</PillBadge>
               <h2>Detailed paths</h2>
             </div>
-            <button class="primary-button" type="button" @click="startCreatingSubCategory">
+            <ActionButton @click="startCreatingSubCategory">
               ➕ New Sub-Category
-            </button>
+            </ActionButton>
           </div>
           <div class="assignment-list">
             <article
@@ -200,12 +199,12 @@
               </div>
             </article>
           </div>
-        </section>
+        </GlassCard>
 
-        <section v-if="editingCategoryId" class="surface-card">
+        <GlassCard v-if="editingCategoryId" tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Category Editor</p>
+              <PillBadge class="eyebrow">Category Editor</PillBadge>
               <h2>{{ editingCategory ? 'Edit category' : 'Create category' }}</h2>
             </div>
           </div>
@@ -216,35 +215,35 @@
             @submit="handleCategorySubmit"
             @cancel="cancelEditingCategory"
           />
-        </section>
+        </GlassCard>
         </div>
       </template>
 
       <template v-if="selectedSection === 'analytics'">
         <div class="admin-workspace">
         <section class="metrics-grid">
-          <article class="metric-card">
+          <GlassCard tag="article" class="metric-card">
             <p>Activities</p>
             <strong>{{ activities.length }}</strong>
-          </article>
-          <article class="metric-card">
+          </GlassCard>
+          <GlassCard tag="article" class="metric-card">
             <p>Root Categories</p>
             <strong>{{ rootCategories.length }}</strong>
-          </article>
-          <article class="metric-card">
+          </GlassCard>
+          <GlassCard tag="article" class="metric-card">
             <p>Sub-Categories</p>
             <strong>{{ subCategories.length }}</strong>
-          </article>
-          <article class="metric-card">
+          </GlassCard>
+          <GlassCard tag="article" class="metric-card">
             <p>Code-Based</p>
             <strong>{{ codedActivities }}</strong>
-          </article>
+          </GlassCard>
         </section>
 
-        <section class="surface-card">
+        <GlassCard tag="section">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Coverage</p>
+              <PillBadge class="eyebrow">Coverage</PillBadge>
               <h2>Activities by category</h2>
             </div>
           </div>
@@ -260,7 +259,7 @@
               </div>
             </article>
           </div>
-        </section>
+        </GlassCard>
         </div>
       </template>
     </div>
@@ -271,6 +270,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppShell from '../../shared/ui/AppShell.vue'
+import GlassCard from '../../shared/ui/GlassCard.vue'
+import PillBadge from '../../shared/ui/PillBadge.vue'
+import ActionButton from '../../shared/ui/ActionButton.vue'
 import ActivityForm from '../../features/activity-management/ActivityForm.vue'
 import ActivityTemplates from '../../features/activity-management/ActivityTemplates.vue'
 import CategoryForm from '../../features/category-management/CategoryForm.vue'
@@ -474,3 +476,266 @@ function logout() {
   router.push('/login')
 }
 </script>
+
+<style scoped>
+.page-workspace {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+}
+
+.admin-page-workspace {
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.admin-workspace {
+  display: grid;
+  grid-template-rows: auto;
+  gap: 1rem;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-workspace > section {
+  min-height: 0;
+  overflow: visible;
+}
+
+.admin-workspace-management {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.admin-management-shell {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.admin-subnav-shell {
+  padding: 1rem;
+}
+
+.admin-subnav {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-subnav .nav-pill {
+  width: auto;
+  min-width: 180px;
+  justify-content: center;
+  border: 0;
+  border-radius: 18px;
+  min-height: 58px;
+  padding: 1rem 1.2rem;
+  font-weight: 800;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  background: rgba(255, 255, 255, 0.58);
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  cursor: pointer;
+}
+
+.admin-subnav .nav-pill.active {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-library-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-table-shell {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-table {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(120px, 1fr) 110px 110px 120px;
+  gap: 1rem;
+  align-items: center;
+}
+
+.admin-table-head {
+  padding: 0 0.5rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(24, 78, 122, 0.1);
+}
+
+.admin-table-row {
+  padding: 1rem;
+  border: 1px solid rgba(24, 78, 122, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.admin-table-row.active {
+  border-color: rgba(22, 183, 214, 0.35);
+  box-shadow: 0 14px 30px rgba(22, 183, 214, 0.12);
+}
+
+.admin-row-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.admin-page-indicators {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-page-indicators .nav-pill {
+  min-width: 58px;
+  justify-content: center;
+  border: 0;
+  border-radius: 18px;
+  min-height: 58px;
+  padding: 1rem 1.2rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.58);
+  cursor: pointer;
+}
+
+.admin-page-indicators .nav-pill.active {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.assignment-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.assignment-row {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(24, 78, 122, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.assignment-row:last-child {
+  border-bottom: 0;
+}
+
+.category-row {
+  flex-wrap: wrap;
+}
+
+.category-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all 200ms;
+  border-radius: 4px;
+}
+
+.icon-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.1);
+}
+
+.icon-button.delete:hover {
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.metrics-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.metric-card {
+  padding: 1.2rem;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 2rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 1180px) {
+  .admin-activity-card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-table {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .admin-table-head {
+    display: none;
+  }
+
+  .admin-row-actions {
+    justify-content: flex-start;
+  }
+
+  .admin-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-subnav {
+    display: grid;
+  }
+
+  .admin-subnav .nav-pill {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 820px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+</style>
