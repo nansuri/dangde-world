@@ -1,53 +1,78 @@
 <template>
-  <div class="player-page" :class="{ 'player-page-split': isTabletLandscape }">
-    <section class="player-topbar" :class="{ 'player-side-panel': isTabletLandscape }">
-      <div>
-        <p class="eyebrow">Activity Player</p>
-        <h1>{{ assignment?.activity?.title || 'Loading activity...' }}</h1>
-        <p class="muted">{{ assignment?.activity?.description }}</p>
-      </div>
-      <div v-if="assignment" class="player-summary-grid">
-        <article class="metric-card player-metric-card">
-          <p>Status</p>
-          <strong>{{ assignment.status.replace('_', ' ') }}</strong>
-        </article>
-        <article class="metric-card player-metric-card">
-          <p>Progress</p>
-          <strong>{{ assignment.progress }}%</strong>
-        </article>
-      </div>
-      <div v-if="assignment" class="player-note">
-        <p class="eyebrow">Prompt</p>
-        <p>{{ assignment.activity.prompt }}</p>
-      </div>
-      <div class="player-actions">
-        <button class="ghost-button" type="button" @click="goBack">Back</button>
-        <button class="primary-button" type="button" @click="markCompleted" :disabled="!assignment">
-          Complete Activity
-        </button>
-      </div>
-    </section>
+  <AppShell
+    title="Kids Zone"
+    subtitle="Explore learning quests with bright colors, clear choices, and playful progress."
+    :items="navItems"
+    @select="selectCategory"
+    @logout="logout"
+  >
+    <div class="page-workspace player-workspace">
+      <div class="player-page" :class="{ 'player-page-split': isTabletLandscape }">
+        <GlassCard tag="section" class="player-overview">
+          <div class="player-head">
+            <div>
+              <PillBadge class="eyebrow">Activity Player</PillBadge>
+              <h1>{{ assignment?.activity?.title || 'Loading activity...' }}</h1>
+              <p class="muted">{{ assignment?.activity?.description || 'Please wait while we load your activity.' }}</p>
+            </div>
+            <PillBadge v-if="assignment" class="status-chip">{{ assignment.status.replace('_', ' ') }}</PillBadge>
+          </div>
 
-    <section v-if="error" class="surface-card">
-      <p class="error-text">{{ error }}</p>
-    </section>
+          <div v-if="assignment" class="player-summary-grid">
+            <GlassCard tag="article" class="metric-card player-metric-card">
+              <p>Progress</p>
+              <strong>{{ assignment.progress }}%</strong>
+            </GlassCard>
+            <GlassCard tag="article" class="metric-card player-metric-card">
+              <p>Language</p>
+              <strong>{{ assignment.activity.language }}</strong>
+            </GlassCard>
+          </div>
 
-    <section v-else-if="assignment" class="player-frame-shell">
-      <iframe
-        ref="playerFrame"
-        class="activity-player-frame"
-        title="Activity Player"
-        sandbox="allow-scripts"
-        :srcdoc="srcdoc"
-      />
-    </section>
-  </div>
+          <div v-if="assignment" class="player-note">
+            <PillBadge class="eyebrow">Prompt</PillBadge>
+            <p>{{ assignment.activity.prompt }}</p>
+          </div>
+
+          <p v-if="actionError" class="error-text">{{ actionError }}</p>
+
+          <div class="player-actions">
+            <ActionButton variant="ghost" :disabled="isBusy" @click="goBack">Back</ActionButton>
+            <ActionButton variant="ghost" :disabled="!assignment || isBusy" @click="reloadActivity">
+              Reload
+            </ActionButton>
+            <ActionButton :disabled="!assignment || isBusy" @click="markCompleted">
+              {{ isBusy ? 'Saving...' : 'Complete Activity' }}
+            </ActionButton>
+          </div>
+        </GlassCard>
+
+        <GlassCard v-if="error" tag="section" class="player-frame-shell">
+          <p class="error-text">{{ error }}</p>
+        </GlassCard>
+
+        <GlassCard v-else-if="assignment" tag="section" class="player-frame-shell">
+          <iframe
+            ref="playerFrame"
+            class="activity-player-frame"
+            title="Activity Player"
+            sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock"
+            :srcdoc="srcdoc"
+          />
+        </GlassCard>
+      </div>
+    </div>
+  </AppShell>
 </template>
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { readSession } from '../../features/auth/session.js'
+import AppShell from '../../shared/ui/AppShell.vue'
+import GlassCard from '../../shared/ui/GlassCard.vue'
+import PillBadge from '../../shared/ui/PillBadge.vue'
+import ActionButton from '../../shared/ui/ActionButton.vue'
+import { clearSession, readSession } from '../../features/auth/session.js'
 import { listAssignments, updateAssignment } from '../../entities/assignment/api.js'
 import { useViewportProfile } from '../../shared/lib/useViewportProfile.js'
 import {
@@ -63,9 +88,27 @@ const playerFrame = ref(null)
 const session = readSession()
 const assignment = ref(null)
 const error = ref('')
+const actionError = ref('')
+const isBusy = ref(false)
 const scriptCloseTag = '</scr' + 'ipt>'
 const styleCloseTag = '</sty' + 'le>'
 const { isTabletLandscape } = useViewportProfile()
+const selectedCategoryKey = ref('all')
+
+const categoryItems = [
+  { key: 'all', label: 'My Activities', icon: '🧩', matches: [] },
+  { key: 'math', label: 'Math', icon: '➕', matches: ['math'] },
+  { key: 'alphabets', label: 'Alphabets', icon: '🔤', matches: ['alphabets'] },
+  { key: 'arabic', label: 'Arabic', icon: '📖', matches: ['arabic'] },
+  { key: 'clock', label: 'Clock', icon: '🕒', matches: ['clock'] },
+]
+
+const navItems = computed(() =>
+  categoryItems.map((item) => ({
+    ...item,
+    active: item.key === selectedCategoryKey.value,
+  })),
+)
 
 const bridgeContext = computed(() => ({
   activityId: assignment.value?.activityId,
@@ -150,11 +193,15 @@ onUnmounted(() => {
 
 async function loadAssignment() {
   try {
+    actionError.value = ''
     const response = await listAssignments({ kidId: session.id })
     assignment.value = response.items.find((item) => String(item.id) === route.params.assignmentId)
     if (!assignment.value) {
       error.value = 'Activity assignment not found.'
+      return
     }
+    error.value = ''
+    syncCategoryFromAssignment()
   } catch (err) {
     error.value = err.message
   }
@@ -286,11 +333,227 @@ async function markCompleted() {
   if (!assignment.value) {
     return
   }
-  const response = await updateAssignment(assignment.value.id, { progress: 100, status: 'completed' })
-  assignment.value = response.item
+  try {
+    isBusy.value = true
+    actionError.value = ''
+    const response = await updateAssignment(assignment.value.id, { progress: 100, status: 'completed' })
+    assignment.value = response.item
+  } catch (err) {
+    actionError.value = err.message || 'Unable to complete activity right now.'
+  } finally {
+    isBusy.value = false
+  }
 }
 
 function goBack() {
-  router.push('/kids')
+  router.push('/kids').catch(() => {})
+}
+
+function syncCategoryFromAssignment() {
+  const slug = (assignment.value?.activity?.category?.slug || '').toLowerCase()
+  if (!slug) {
+    selectedCategoryKey.value = 'all'
+    return
+  }
+  const matched = categoryItems.find((item) => item.matches.some((match) => slug.includes(match)))
+  selectedCategoryKey.value = matched?.key || 'all'
+}
+
+function selectCategory(item) {
+  selectedCategoryKey.value = item.key
+  if (!assignment.value) {
+    return
+  }
+  if (item.key === 'all') {
+    return
+  }
+
+  const slug = (assignment.value.activity.category?.slug || '').toLowerCase()
+  const isCurrentCategory = item.matches.some((match) => slug.includes(match))
+  if (isCurrentCategory) {
+    return
+  }
+
+  goBack()
+}
+
+function logout() {
+  clearSession()
+  router.push('/login').catch(() => {})
+}
+
+function reloadActivity() {
+  // Resetting srcdoc by nudging assignment reference re-renders the iframe safely.
+  if (assignment.value) {
+    assignment.value = { ...assignment.value }
+  }
 }
 </script>
+
+<style scoped>
+.page-workspace {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+}
+
+.player-workspace {
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.player-page {
+  display: grid;
+  grid-template-rows: auto minmax(72vh, 1fr);
+  gap: 1rem;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.player-page-split {
+  grid-template-columns: minmax(280px, 0.62fr) minmax(0, 2.2fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.player-overview {
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+  align-content: start;
+  max-height: 34vh;
+  overflow-y: auto;
+}
+
+.player-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.player-overview h1 {
+  margin: 0.2rem 0 0.25rem;
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  line-height: 1.2;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.player-overview .muted {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.player-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.player-metric-card {
+  min-height: 72px;
+  border-radius: 16px;
+  padding: 0.6rem 0.7rem;
+}
+
+.player-metric-card p {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.player-metric-card strong {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.player-note {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0.55rem 0.65rem;
+}
+
+.player-note p {
+  margin: 0.3rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.player-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.player-actions :deep(.action-button) {
+  min-height: 44px;
+  padding: 0.62rem 0.85rem;
+  font-size: 0.9rem;
+  border-radius: 14px;
+}
+
+.player-frame-shell {
+  padding: 0.75rem;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+}
+
+.activity-player-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 24px;
+  background: #fff;
+}
+
+.error-text {
+  color: #bf1650;
+  margin: 0;
+}
+
+@media (max-width: 1180px) {
+  .player-page-split {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(72vh, 1fr);
+  }
+
+  .player-overview {
+    max-height: 30vh;
+  }
+}
+
+@media (max-width: 820px) {
+  .player-page {
+    grid-template-rows: auto minmax(68vh, 1fr);
+  }
+
+  .player-overview {
+    max-height: 32vh;
+  }
+
+  .player-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .player-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .player-frame-shell {
+    padding: 0.5rem;
+  }
+}
+</style>

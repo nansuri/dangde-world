@@ -11,6 +11,7 @@ import (
 	"dangde-world/backend/internal/domain/activity"
 	"dangde-world/backend/internal/domain/activitydata"
 	"dangde-world/backend/internal/domain/category"
+	"dangde-world/backend/internal/domain/user"
 	"dangde-world/backend/internal/infrastructure/persistence"
 	"dangde-world/backend/internal/shared/config"
 

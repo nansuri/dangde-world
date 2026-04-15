@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dangde-world-backend
+    restart: unless-stopped
+    environment:
+      - APP_ENV=${APP_ENV}
+      - PORT=${PORT:-8080}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - STORAGE_PATH=${STORAGE_PATH:-./storage}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSLMODE=${DB_SSLMODE}
+      - DB_TIMEZONE=${DB_TIMEZONE}
+      - DATABASE_URL=host=${DB_HOST} user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} port=${DB_PORT:-5432} sslmode=${DB_SSLMODE} TimeZone=${DB_TIMEZONE}
+    ports:
+      - "${PORT:-8080}:8080"
+    networks:
+      - dashboard_dashboard-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    container_name: dangde-world-frontend
+    depends_on:
+      - backend
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    networks:
+      - dashboard_dashboard-network
+
+networks:
+  dashboard_dashboard-network:
+    external: true
