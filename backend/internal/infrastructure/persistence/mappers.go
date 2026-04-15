@@ -62,6 +62,9 @@ func toActivityEntity(model activityModel) activity.Activity {
 		Category:    toCategoryEntity(model.Category),
 		Prompt:      model.Prompt,
 		Icon:        model.Icon,
+		HTMLCode:    model.HTMLCode,
+		CSSCode:     model.CSSCode,
+		JSCode:      model.JSCode,
 	}
 }
 
@@ -76,6 +79,9 @@ func toActivityModel(entity activity.Activity) activityModel {
 		CategoryID:  entity.CategoryID,
 		Prompt:      entity.Prompt,
 		Icon:        entity.Icon,
+		HTMLCode:    entity.HTMLCode,
+		CSSCode:     entity.CSSCode,
+		JSCode:      entity.JSCode,
 	}
 }
 

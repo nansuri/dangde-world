@@ -32,8 +32,36 @@ func (s Service) ListUsers(role string, parentID *uint) ([]user.User, error) {
 	return s.users.List(role, parentID)
 }
 
+func (s Service) CreateUser(item user.User) (user.User, error) {
+	return s.users.Create(item)
+}
+
+func (s Service) UpdateUser(item user.User) (user.User, error) {
+	return s.users.Update(item)
+}
+
+func (s Service) DeleteUser(id uint) error {
+	return s.users.Delete(id)
+}
+
 func (s Service) ListCategories(categoryType string) ([]category.Category, error) {
 	return s.categories.List(categoryType)
+}
+
+func (s Service) GetAllCategories() ([]category.Category, error) {
+	return s.categories.ListAll()
+}
+
+func (s Service) CreateCategory(item category.Category) (category.Category, error) {
+	return s.categories.Create(item)
+}
+
+func (s Service) UpdateCategory(item category.Category) (category.Category, error) {
+	return s.categories.Update(item)
+}
+
+func (s Service) DeleteCategory(id uint) error {
+	return s.categories.Delete(id)
 }
 
 func (s Service) ListActivities(categoryID *uint) ([]activity.Activity, error) {
@@ -75,4 +103,8 @@ func (s Service) UpdateAssignment(id uint, status string, progress *int) (assign
 		item.Progress = *progress
 	}
 	return s.assignments.Update(item)
+}
+
+func (s Service) DeleteAssignment(id uint) error {
+	return s.assignments.Delete(id)
 }

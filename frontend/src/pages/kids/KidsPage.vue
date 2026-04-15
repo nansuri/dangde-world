@@ -6,92 +6,101 @@
     @select="selectCategory"
     @logout="logout"
   >
-    <div class="page-workspace kids-dashboard" :class="{ 'kids-dashboard-split': isTabletLandscape }">
-      <section class="hero-panel kids-hero-panel">
-        <div>
-          <p class="eyebrow">Hi {{ session?.name }}</p>
-          <h2>{{ selectedCategory.label }} adventures</h2>
-          <p>Choose a game from the left, then continue the matching activity here.</p>
-        </div>
+    <div class="page-workspace kids-workspace">
+      <div class="kids-dashboard" :class="{ 'kids-dashboard-split': isTabletLandscape }">
+        <section class="hero-panel kids-hero-panel">
+          <div>
+            <p class="eyebrow">Hi {{ session?.name }}</p>
+            <h2>{{ selectedCategory.label }} adventures</h2>
+            <p>Choose a game from the left, then continue the matching activity here.</p>
+          </div>
 
-        <div class="kids-hero-badges">
-          <div class="kids-hero-chip">
-            <span>Assignments</span>
-            <strong>{{ filteredAssignments.length }}</strong>
-          </div>
-          <div class="kids-hero-chip">
-            <span>Done</span>
-            <strong>{{ completedAssignments }}</strong>
-          </div>
-        </div>
-      </section>
-
-      <section class="kids-detail-panel" :class="{ 'surface-card': true }">
-        <template v-if="featuredAssignment">
-          <div class="kids-detail-top">
-            <span class="activity-icon kids-featured-icon">{{ featuredAssignment.activity.icon }}</span>
-            <span class="status-chip">{{ featuredAssignment.status.replace('_', ' ') }}</span>
-          </div>
-          <h3>{{ featuredAssignment.activity.title }}</h3>
-          <p>{{ featuredAssignment.activity.description }}</p>
-          <p class="muted">{{ featuredAssignment.activity.prompt }}</p>
-          <div class="progress-row">
-            <div class="progress-track">
-              <div class="progress-fill" :style="{ width: `${featuredAssignment.progress}%` }"></div>
+          <div class="kids-hero-badges">
+            <div class="kids-hero-chip">
+              <span>Assignments</span>
+              <strong>{{ filteredAssignments.length }}</strong>
             </div>
-            <strong>{{ featuredAssignment.progress }}%</strong>
+            <div class="kids-hero-chip">
+              <span>Done</span>
+              <strong>{{ completedAssignments }}</strong>
+            </div>
           </div>
-          <div class="card-actions">
-            <button class="primary-button" type="button" @click="playActivity(featuredAssignment)">
-              Play Featured
-            </button>
-            <button class="ghost-button" type="button" @click="advance(featuredAssignment)">
-              Quick Progress
-            </button>
-          </div>
-        </template>
+        </section>
 
-        <template v-else>
-          <div class="activity-card empty-state-card kids-empty-panel">
+        <section class="kids-detail-panel" :class="{ 'surface-card': true }">
+          <template v-if="featuredAssignment">
+            <div class="kids-detail-top">
+              <span class="activity-icon kids-featured-icon">{{ featuredAssignment.activity.icon }}</span>
+              <span class="status-chip">{{ featuredAssignment.status.replace('_', ' ') }}</span>
+            </div>
+            <h3>{{ featuredAssignment.activity.title }}</h3>
+            <p>{{ featuredAssignment.activity.description }}</p>
+            <p class="muted">{{ featuredAssignment.activity.prompt }}</p>
+            <div class="progress-row">
+              <div class="progress-track">
+                <div class="progress-fill" :style="{ width: `${featuredAssignment.progress}%` }"></div>
+              </div>
+              <strong>{{ featuredAssignment.progress }}%</strong>
+            </div>
+            <div class="card-actions">
+              <button class="primary-button" type="button" @click="playActivity(featuredAssignment)">
+                Play Featured
+              </button>
+              <button class="ghost-button" type="button" @click="advance(featuredAssignment)">
+                Quick Progress
+              </button>
+            </div>
+          </template>
+
+          <template v-else>
+            <div class="activity-card empty-state-card kids-empty-panel">
+              <div class="activity-card-top">
+                <span class="activity-icon">{{ selectedCategory.icon }}</span>
+                <span class="status-chip">No assignment</span>
+              </div>
+              <h3>No {{ selectedCategory.label.toLowerCase() }} activity yet</h3>
+              <p>Ask your parent to assign a new activity in this category.</p>
+            </div>
+          </template>
+        </section>
+
+        <section class="card-grid kids-card-grid">
+          <article
+            v-for="assignment in gridAssignments"
+            :key="assignment.id"
+            class="activity-card kids-activity-card"
+          >
             <div class="activity-card-top">
-              <span class="activity-icon">{{ selectedCategory.icon }}</span>
-              <span class="status-chip">No assignment</span>
+              <span class="activity-icon">{{ assignment.activity.icon }}</span>
+              <span class="status-chip">{{ assignment.status.replace('_', ' ') }}</span>
             </div>
-            <h3>No {{ selectedCategory.label.toLowerCase() }} activity yet</h3>
-            <p>Ask your parent to assign a new activity in this category.</p>
-          </div>
-        </template>
-      </section>
+            <h3>{{ assignment.activity.title }}</h3>
+            <p>{{ assignment.activity.description }}</p>
+            <div class="progress-row">
+              <div class="progress-track">
+                <div class="progress-fill" :style="{ width: `${assignment.progress}%` }"></div>
+              </div>
+              <strong>{{ assignment.progress }}%</strong>
+            </div>
+            <div class="card-actions">
+              <button class="primary-button" type="button" @click="playActivity(assignment)">
+                Play
+              </button>
+              <button class="ghost-button" type="button" @click="setFeaturedAssignment(assignment.id)">
+                Preview
+              </button>
+            </div>
+          </article>
 
-      <section class="card-grid kids-card-grid">
-        <article
-          v-for="assignment in filteredAssignments"
-          :key="assignment.id"
-          class="activity-card kids-activity-card"
-          :class="{ featured: featuredAssignment?.id === assignment.id }"
-        >
-          <div class="activity-card-top">
-            <span class="activity-icon">{{ assignment.activity.icon }}</span>
-            <span class="status-chip">{{ assignment.status.replace('_', ' ') }}</span>
-          </div>
-          <h3>{{ assignment.activity.title }}</h3>
-          <p>{{ assignment.activity.description }}</p>
-          <div class="progress-row">
-            <div class="progress-track">
-              <div class="progress-fill" :style="{ width: `${assignment.progress}%` }"></div>
+          <div v-if="featuredAssignment && gridAssignments.length === 0" class="activity-card empty-state-card kids-empty-panel">
+             <div class="activity-card-top">
+              <span class="activity-icon">✨</span>
             </div>
-            <strong>{{ assignment.progress }}%</strong>
+            <h3>More adventures await!</h3>
+            <p>You are currently focusing on the featured activity above.</p>
           </div>
-          <div class="card-actions">
-            <button class="primary-button" type="button" @click="playActivity(assignment)">
-              Play
-            </button>
-            <button class="ghost-button" type="button" @click="setFeaturedAssignment(assignment.id)">
-              Preview
-            </button>
-          </div>
-        </article>
-      </section>
+        </section>
+      </div>
     </div>
   </AppShell>
 </template>
@@ -142,6 +151,11 @@ const featuredAssignment = computed(
     filteredAssignments.value[0] ||
     null,
 )
+
+const gridAssignments = computed(() => {
+  if (!featuredAssignment.value) return filteredAssignments.value
+  return filteredAssignments.value.filter((a) => a.id !== featuredAssignment.value.id)
+})
 
 const completedAssignments = computed(
   () => filteredAssignments.value.filter((assignment) => assignment.status === 'completed').length,

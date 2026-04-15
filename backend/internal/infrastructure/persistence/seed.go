@@ -7,28 +7,28 @@ import (
 	"dangde-world/backend/internal/domain/user"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func Seed(db *gorm.DB) error {
+	// Truncate tables to start fresh
+	db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&userModel{})
+	db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&categoryModel{})
+	db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&activityModel{})
+	db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&assignmentModel{})
+	db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&activityDataModel{})
+
 	users := NewUserRepository(db)
 	categories := NewCategoryRepository(db)
 	activities := NewActivityRepository(db)
 	assignments := NewAssignmentRepository(db)
 
-	count, err := users.Count()
-	if err != nil {
+	if err := users.CreateBatch([]user.User{
+		{ID: 1, Name: "Alya Admin", Role: user.RoleAdmin, Avatar: "🛠️", PreferredLang: "en"},
+		{ID: 2, Name: "Prita Parent", Role: user.RoleParent, Avatar: "🌟", PreferredLang: "id"},
+		{ID: 3, Name: "Nino", Role: user.RoleKid, Avatar: "🦁", PreferredLang: "en", ParentID: uintPtr(2)},
+		{ID: 4, Name: "Sasa", Role: user.RoleKid, Avatar: "🐼", PreferredLang: "id", ParentID: uintPtr(2)},
+	}); err != nil {
 		return err
-	}
-	if count == 0 {
-		if err := users.CreateBatch([]user.User{
-			{ID: 1, Name: "Alya Admin", Role: user.RoleAdmin, Avatar: "🛠️", PreferredLang: "en"},
-			{ID: 2, Name: "Prita Parent", Role: user.RoleParent, Avatar: "🌟", PreferredLang: "id"},
-			{ID: 3, Name: "Nino", Role: user.RoleKid, Avatar: "🦁", PreferredLang: "en", ParentID: uintPtr(2)},
-			{ID: 4, Name: "Sasa", Role: user.RoleKid, Avatar: "🐼", PreferredLang: "id", ParentID: uintPtr(2)},
-		}); err != nil {
-			return err
-		}
 	}
 
 	seedCategories := []category.Category{
@@ -39,14 +39,7 @@ func Seed(db *gorm.DB) error {
 		{ID: 5, Name: "Arabic Reading", Slug: "arabic-reading", Type: "learning", ParentID: uintPtr(1)},
 		{ID: 6, Name: "Clock Reading", Slug: "clock-reading", Type: "learning", ParentID: uintPtr(1)},
 	}
-	if count == 0 {
-		if err := categories.CreateBatch(seedCategories); err != nil {
-			return err
-		}
-	} else if err := db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"name", "slug", "type", "parent_id"}),
-	}).Create(seedCategoriesToModels(seedCategories)).Error; err != nil {
+	if err := categories.CreateBatch(seedCategories); err != nil {
 		return err
 	}
 
@@ -108,16 +101,7 @@ func Seed(db *gorm.DB) error {
 			JSCode:      "const result=document.getElementById('result');document.querySelectorAll('[data-answer]').forEach((button)=>{button.addEventListener('click',async()=>{const correct=button.dataset.answer==='3:00';result.textContent=correct?'Yes, it is 3:00!':'Not yet, look at the short hand.';await window.DangdeAPI.save({key:'clock-answer',value:{answer:button.dataset.answer,correct}});await window.DangdeAPI.setProgress({progress:correct?100:50,status:correct?'completed':'in_progress'});});});",
 		},
 	}
-	if count == 0 {
-		if err := activities.CreateBatch(seedActivities); err != nil {
-			return err
-		}
-	} else if err := db.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"title", "description", "language", "difficulty", "age_group", "category_id", "prompt", "icon", "html_code", "css_code", "js_code",
-		}),
-	}).Create(seedActivitiesToModels(seedActivities)).Error; err != nil {
+	if err := activities.CreateBatch(seedActivities); err != nil {
 		return err
 	}
 
@@ -126,14 +110,7 @@ func Seed(db *gorm.DB) error {
 		{ID: 2, ParentID: 2, KidID: 3, ActivityID: 2, Status: "assigned", Progress: 10},
 		{ID: 3, ParentID: 2, KidID: 4, ActivityID: 4, Status: "completed", Progress: 100},
 	}
-	if count == 0 {
-		return assignments.CreateBatch(seedAssignments)
-	}
-
-	return db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"parent_id", "kid_id", "activity_id", "status", "progress"}),
-	}).Create(seedAssignmentsToModels(seedAssignments)).Error
+	return assignments.CreateBatch(seedAssignments)
 }
 
 func uintPtr(value uint) *uint {

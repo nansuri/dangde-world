@@ -45,6 +45,26 @@ func (r UserRepository) List(role string, parentID *uint) ([]user.User, error) {
 	return items, nil
 }
 
+func (r UserRepository) Create(item user.User) (user.User, error) {
+	model := toUserModel(item)
+	if err := r.db.Create(&model).Error; err != nil {
+		return user.User{}, err
+	}
+	return toUserEntity(model), nil
+}
+
+func (r UserRepository) Update(item user.User) (user.User, error) {
+	model := toUserModel(item)
+	if err := r.db.Model(&userModel{}).Where("id = ?", item.ID).Updates(&model).Error; err != nil {
+		return user.User{}, err
+	}
+	return r.FindByID(item.ID)
+}
+
+func (r UserRepository) Delete(id uint) error {
+	return r.db.Delete(&userModel{}, id).Error
+}
+
 func (r UserRepository) CreateBatch(items []user.User) error {
 	models := make([]userModel, 0, len(items))
 	for _, item := range items {
@@ -81,6 +101,38 @@ func (r CategoryRepository) List(categoryType string) ([]category.Category, erro
 		items = append(items, toCategoryEntity(model))
 	}
 	return items, nil
+}
+
+func (r CategoryRepository) ListAll() ([]category.Category, error) {
+	var models []categoryModel
+	if err := r.db.Order("id asc").Find(&models).Error; err != nil {
+		return nil, err
+	}
+	items := make([]category.Category, 0, len(models))
+	for _, model := range models {
+		items = append(items, toCategoryEntity(model))
+	}
+	return items, nil
+}
+
+func (r CategoryRepository) Create(item category.Category) (category.Category, error) {
+	model := toCategoryModel(item)
+	if err := r.db.Create(&model).Error; err != nil {
+		return category.Category{}, err
+	}
+	return toCategoryEntity(model), nil
+}
+
+func (r CategoryRepository) Update(item category.Category) (category.Category, error) {
+	model := toCategoryModel(item)
+	if err := r.db.Model(&categoryModel{}).Where("id = ?", item.ID).Updates(&model).Error; err != nil {
+		return category.Category{}, err
+	}
+	return toCategoryEntity(model), nil
+}
+
+func (r CategoryRepository) Delete(id uint) error {
+	return r.db.Delete(&categoryModel{}, id).Error
 }
 
 func (r CategoryRepository) CreateBatch(items []category.Category) error {
@@ -204,6 +256,10 @@ func (r AssignmentRepository) CreateBatch(items []assignment.Assignment) error {
 		models = append(models, toAssignmentModel(item))
 	}
 	return r.db.Create(&models).Error
+}
+
+func (r AssignmentRepository) Delete(id uint) error {
+	return r.db.Delete(&assignmentModel{}, id).Error
 }
 
 type ActivityDataRepository struct {

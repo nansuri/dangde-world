@@ -6,4 +6,5 @@ type Repository interface {
 	Create(item Assignment) (Assignment, error)
 	Update(item Assignment) (Assignment, error)
 	CreateBatch(items []Assignment) error
+	Delete(id uint) error
 }

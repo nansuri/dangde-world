@@ -28,6 +28,9 @@ type activityModel struct {
 	Category    categoryModel `gorm:"foreignKey:CategoryID"`
 	Prompt      string
 	Icon        string
+	HTMLCode    string `gorm:"type:text"`
+	CSSCode     string `gorm:"type:text"`
+	JSCode      string `gorm:"type:text"`
 }
 
 type assignmentModel struct {

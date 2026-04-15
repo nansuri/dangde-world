@@ -22,3 +22,9 @@ export function updateAssignment(id, payload) {
 export function getParentStats(parentId) {
   return http(`/stats/parent/${parentId}`)
 }
+
+export function deleteAssignment(id) {
+  return http(`/assignments/${id}`, {
+    method: 'DELETE',
+  })
+}

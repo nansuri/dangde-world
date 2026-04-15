@@ -23,6 +23,8 @@
         </button>
       </div>
 
+      <APIReference />
+
       <div class="activity-meta-panel">
         <label>
           Title
@@ -128,6 +130,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import APIReference from './APIReference.vue'
 
 const props = defineProps({
   categories: {

@@ -46,6 +46,12 @@
               New Activity
             </button>
           </div>
+
+          <ActivityTemplates
+            v-if="!editingActivity"
+            @select="applyTemplate"
+          />
+
           <ActivityForm
             :categories="subCategories"
             :model-value="editingActivity"
@@ -123,15 +129,23 @@
       </div>
 
       <template v-if="selectedSection === 'categories'">
-        <section class="surface-card">
+        <div class="admin-workspace">
+        <section v-if="!editingCategoryId" class="surface-card">
           <div class="section-head">
             <div>
               <p class="eyebrow">Categories</p>
               <h2>Learning structure</h2>
             </div>
+            <button class="primary-button" type="button" @click="startCreatingCategory">
+              ➕ New Category
+            </button>
           </div>
           <div class="assignment-list">
-            <article v-for="category in rootCategories" :key="category.id" class="assignment-row">
+            <article
+              v-for="category in rootCategories"
+              :key="category.id"
+              class="assignment-row category-row"
+            >
               <div>
                 <strong>{{ category.name }}</strong>
                 <p>{{ category.type }}</p>
@@ -140,19 +154,34 @@
                 <p class="muted">Sub-categories</p>
                 <strong>{{ countChildren(category.id) }}</strong>
               </div>
+              <div class="category-actions">
+                <button class="icon-button" type="button" @click="editCategory(category)" title="Edit">
+                  ✏️
+                </button>
+                <button class="icon-button delete" type="button" @click="deleteCategoryItem(category)" title="Delete">
+                  🗑️
+                </button>
+              </div>
             </article>
           </div>
         </section>
 
-        <section class="surface-card">
+        <section v-if="rootCategories.length > 0 && !editingCategoryId" class="surface-card">
           <div class="section-head">
             <div>
               <p class="eyebrow">Sub-Categories</p>
               <h2>Detailed paths</h2>
             </div>
+            <button class="primary-button" type="button" @click="startCreatingSubCategory">
+              ➕ New Sub-Category
+            </button>
           </div>
           <div class="assignment-list">
-            <article v-for="category in subCategories" :key="category.id" class="assignment-row">
+            <article
+              v-for="category in subCategories"
+              :key="category.id"
+              class="assignment-row category-row"
+            >
               <div>
                 <strong>{{ category.name }}</strong>
                 <p>{{ parentCategoryName(category.parentId) }}</p>
@@ -161,12 +190,38 @@
                 <p class="muted">Activities</p>
                 <strong>{{ countActivities(category.id) }}</strong>
               </div>
+              <div class="category-actions">
+                <button class="icon-button" type="button" @click="editCategory(category)" title="Edit">
+                  ✏️
+                </button>
+                <button class="icon-button delete" type="button" @click="deleteCategoryItem(category)" title="Delete">
+                  🗑️
+                </button>
+              </div>
             </article>
           </div>
         </section>
+
+        <section v-if="editingCategoryId" class="surface-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Category Editor</p>
+              <h2>{{ editingCategory ? 'Edit category' : 'Create category' }}</h2>
+            </div>
+          </div>
+          <CategoryForm
+            :categories="categories"
+            :model-value="editingCategory"
+            :submit-label="editingCategory ? 'Update Category' : 'Create Category'"
+            @submit="handleCategorySubmit"
+            @cancel="cancelEditingCategory"
+          />
+        </section>
+        </div>
       </template>
 
       <template v-if="selectedSection === 'analytics'">
+        <div class="admin-workspace">
         <section class="metrics-grid">
           <article class="metric-card">
             <p>Activities</p>
@@ -206,6 +261,7 @@
             </article>
           </div>
         </section>
+        </div>
       </template>
     </div>
   </AppShell>
@@ -216,8 +272,10 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppShell from '../../shared/ui/AppShell.vue'
 import ActivityForm from '../../features/activity-management/ActivityForm.vue'
+import ActivityTemplates from '../../features/activity-management/ActivityTemplates.vue'
+import CategoryForm from '../../features/category-management/CategoryForm.vue'
 import { clearSession } from '../../features/auth/session.js'
-import { listCategories } from '../../entities/category/api.js'
+import { listCategories, createCategory, updateCategory, deleteCategory } from '../../entities/category/api.js'
 import { createActivity, listActivities, updateActivity } from '../../entities/activity/api.js'
 
 const router = useRouter()
@@ -225,6 +283,7 @@ const categories = ref([])
 const activities = ref([])
 const selectedSection = ref('curriculum')
 const editingActivityId = ref(null)
+const editingCategoryId = ref(null)
 const currentPage = ref(1)
 const selectedCurriculumPage = ref('management')
 const pageSize = 4
@@ -253,6 +312,9 @@ const codedActivities = computed(
 )
 const editingActivity = computed(
   () => activities.value.find((item) => item.id === editingActivityId.value) || null,
+)
+const editingCategory = computed(
+  () => categories.value.find((item) => item.id === editingCategoryId.value) || null,
 )
 const totalPages = computed(() => Math.max(1, Math.ceil(activities.value.length / pageSize)))
 const paginatedActivities = computed(() => {
@@ -300,6 +362,29 @@ async function handleActivitySubmit(payload) {
   await createNewActivity(payload)
 }
 
+function applyTemplate(template) {
+  editingActivityId.value = null
+  selectedCurriculumPage.value = 'management'
+  // Set a small delay to allow the form to render before setting values
+  setTimeout(() => {
+    const form = {
+      title: template.name,
+      description: template.description,
+      prompt: template.description,
+      language: 'English',
+      difficulty: 'easy',
+      ageGroup: '4-8',
+      categoryId: subCategories.value[0]?.id || 1,
+      icon: template.icon,
+      htmlCode: template.htmlCode,
+      cssCode: template.cssCode,
+      jsCode: template.jsCode,
+    }
+    editingActivityId.value = 'template-' + template.id
+    Object.assign(editingActivity.value || {}, form)
+  }, 0)
+}
+
 function selectSection(item) {
   selectedSection.value = item.key
 }
@@ -312,6 +397,52 @@ function editActivity(activity) {
 function startCreating() {
   editingActivityId.value = null
   selectedCurriculumPage.value = 'management'
+}
+
+function startCreatingCategory() {
+  editingCategoryId.value = null
+}
+
+function startCreatingSubCategory() {
+  editingCategoryId.value = null
+}
+
+async function handleCategorySubmit(payload) {
+  try {
+    if (editingCategory.value) {
+      // Update
+      await updateCategory(editingCategory.value.id, payload)
+    } else {
+      // Create
+      await createCategory(payload)
+    }
+    await loadData()
+    editingCategoryId.value = null
+  } catch (error) {
+    console.error('Error saving category:', error)
+    alert('Failed to save category: ' + error.message)
+  }
+}
+
+function editCategory(category) {
+  editingCategoryId.value = category.id
+}
+
+async function deleteCategoryItem(category) {
+  if (!confirm(`Delete category "${category.name}"? This cannot be undone.`)) {
+    return
+  }
+  try {
+    await deleteCategory(category.id)
+    await loadData()
+  } catch (error) {
+    console.error('Error deleting category:', error)
+    alert('Failed to delete category: ' + error.message)
+  }
+}
+
+function cancelEditingCategory() {
+  editingCategoryId.value = null
 }
 
 function goToPage(page) {

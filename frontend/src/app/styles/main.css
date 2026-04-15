@@ -315,10 +315,6 @@ button:focus-visible {
   padding-right: 0.125rem;
 }
 
-.app-content:has(.page-workspace) {
-  overflow-y: hidden;
-}
-
 .app-content-inner {
   height: 100%;
   min-height: 0;
@@ -335,38 +331,24 @@ button:focus-visible {
   overflow: hidden;
 }
 
-.admin-workspace {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 1rem;
-  min-height: 0;
-  height: 100%;
-}
-
-.admin-workspace > section {
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.admin-workspace-management {
-  min-height: 100%;
-  height: 100%;
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-.parents-workspace {
-  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1.2fr);
+.kids-workspace {
+  grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
-}
-
-.hero-panel,
-.surface-card {
-  padding: 1.5rem;
 }
 
 .kids-dashboard {
   display: grid;
+  grid-template-rows: auto;
   gap: 1rem;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kids-dashboard > section {
+  min-height: 0;
+  overflow: visible;
 }
 
 .kids-dashboard-split {
@@ -377,9 +359,66 @@ button:focus-visible {
   align-items: start;
 }
 
-.kids-hero-panel {
+.admin-workspace {
   display: grid;
-  gap: 1.25rem;
+  grid-template-rows: auto;
+  gap: 1rem;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-workspace > section {
+  min-height: 0;
+  overflow: visible;
+}
+
+.admin-workspace-management {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.admin-management-shell {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.admin-management-shell > .activity-ide {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.admin-management-shell > .template-selector {
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-management-shell > form.activity-ide {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.parents-workspace {
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.hero-panel,
+.surface-card {
+  padding: 1.5rem;
+}
+.kids-dashboard-split {
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.45fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "hero grid"
+    "detail grid";
+  align-items: stretch;
 }
 
 .kids-dashboard-split .kids-hero-panel {
@@ -395,11 +434,13 @@ button:focus-visible {
 
 .kids-dashboard-split .kids-card-grid {
   grid-area: grid;
+  height: 100%;
 }
 
-.kids-hero-badges {
+.kids-hero-panel {
   display: grid;
-  gap: 0.75rem;
+  gap: 1.25rem;
+}
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -484,6 +525,52 @@ button:focus-visible {
 .inline-form {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
+}
+
+.template-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  min-height: 0;
+}
+
+.template-button {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.68);
+  cursor: pointer;
+  transition: all 180ms ease;
+  align-items: center;
+  justify-items: center;
+  text-align: center;
+  color: var(--ink);
+  font-weight: 600;
+  min-height: 160px;
+}
+
+.template-button:hover {
+  border-color: var(--primary);
+  box-shadow: 0 12px 24px rgba(255, 122, 24, 0.15);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.template-button:focus-visible {
+  border-color: var(--secondary);
+  outline: 2px solid var(--secondary);
+}
+
+.template-icon {
+  font-size: 3rem;
+  display: block;
+}
+
+.template-name {
+  display: block;
+  font-size: 1rem;
 }
 
 .activity-form {
@@ -737,10 +824,43 @@ button:focus-visible {
 .assignment-row {
   padding: 1rem 0;
   border-bottom: 1px solid rgba(24, 78, 122, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
 
 .assignment-row:last-child {
   border-bottom: 0;
+}
+
+.category-row {
+  flex-wrap: wrap;
+}
+
+.category-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all 200ms;
+  border-radius: 4px;
+}
+
+.icon-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.1);
+}
+
+.icon-button.delete:hover {
+  background: rgba(244, 67, 54, 0.1);
 }
 
 .admin-activity-card {
@@ -751,12 +871,12 @@ button:focus-visible {
 
 .admin-workspace {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
+  min-height: 0;
+  height: 100%;
 }
 
 .admin-workspace-management {
-  min-height: 100%;
-  height: 100%;
   grid-template-rows: auto minmax(0, 1fr);
 }
 

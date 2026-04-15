@@ -10,6 +10,7 @@ import (
 	"dangde-world/backend/internal/application/runtime"
 	"dangde-world/backend/internal/domain/activity"
 	"dangde-world/backend/internal/domain/activitydata"
+	"dangde-world/backend/internal/domain/category"
 	"dangde-world/backend/internal/infrastructure/persistence"
 	"dangde-world/backend/internal/shared/config"
 
@@ -27,6 +28,14 @@ type Handler struct {
 
 type loginRequest struct {
 	UserID uint `json:"userId"`
+}
+
+type userRequest struct {
+	Name          string `json:"name" binding:"required"`
+	Role          string `json:"role" binding:"required"`
+	Avatar        string `json:"avatar"`
+	ParentID      *uint  `json:"parentId"`
+	PreferredLang string `json:"preferredLang"`
 }
 
 type activityRequest struct {
@@ -67,6 +76,13 @@ type activityDataUpdateRequest struct {
 	Value string `json:"value" binding:"required"`
 }
 
+type categoryRequest struct {
+	Name     string `json:"name" binding:"required"`
+	Slug     string `json:"slug" binding:"required"`
+	Type     string `json:"type" binding:"required"`
+	ParentID *uint  `json:"parentId"`
+}
+
 func NewRouter(db *gorm.DB, cfg config.Config) *gin.Engine {
 	userRepo := persistence.NewUserRepository(db)
 	categoryRepo := persistence.NewCategoryRepository(db)
@@ -84,7 +100,7 @@ func NewRouter(db *gorm.DB, cfg config.Config) *gin.Engine {
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: []string{cfg.FrontendURL, "http://127.0.0.1:5173"},
-		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "OPTIONS"},
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{"Content-Type"},
 	}))
 
@@ -96,13 +112,20 @@ func NewRouter(db *gorm.DB, cfg config.Config) *gin.Engine {
 	{
 		api.POST("/auth/login", handler.login)
 		api.GET("/users", handler.listUsers)
+		api.POST("/users", handler.createUser)
+		api.PUT("/users/:id", handler.updateUser)
+		api.DELETE("/users/:id", handler.deleteUser)
 		api.GET("/categories", handler.listCategories)
+		api.POST("/categories", handler.createCategory)
+		api.PUT("/categories/:id", handler.updateCategory)
+		api.DELETE("/categories/:id", handler.deleteCategory)
 		api.GET("/activities", handler.listActivities)
 		api.POST("/activities", handler.createActivity)
 		api.PUT("/activities/:id", handler.updateActivity)
 		api.GET("/assignments", handler.listAssignments)
 		api.POST("/assignments", handler.createAssignment)
 		api.PATCH("/assignments/:id", handler.updateAssignment)
+		api.DELETE("/assignments/:id", handler.deleteAssignment)
 		api.GET("/activity-data", handler.listActivityData)
 		api.POST("/activity-data", handler.createActivityData)
 		api.PUT("/activity-data/:id", handler.updateActivityData)
@@ -147,6 +170,69 @@ func (h Handler) listUsers(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"items": items})
+}
+
+func (h Handler) createUser(c *gin.Context) {
+	var payload userRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	item, err := h.catalog.CreateUser(user.User{
+		Name:          payload.Name,
+		Role:          payload.Role,
+		Avatar:        payload.Avatar,
+		ParentID:      payload.ParentID,
+		PreferredLang: payload.PreferredLang,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"item": item})
+}
+
+func (h Handler) updateUser(c *gin.Context) {
+	var payload userRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	value, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	item, err := h.catalog.UpdateUser(user.User{
+		ID:            uint(value),
+		Name:          payload.Name,
+		Role:          payload.Role,
+		Avatar:        payload.Avatar,
+		ParentID:      payload.ParentID,
+		PreferredLang: payload.PreferredLang,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"item": item})
+}
+
+func (h Handler) deleteUser(c *gin.Context) {
+	value, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	if err := h.catalog.DeleteUser(uint(value)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
 
 func (h Handler) listCategories(c *gin.Context) {
@@ -306,6 +392,20 @@ func (h Handler) updateAssignment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"item": item})
 }
 
+func (h Handler) deleteAssignment(c *gin.Context) {
+	value, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid assignment id"})
+		return
+	}
+
+	if err := h.catalog.DeleteAssignment(uint(value)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
 func (h Handler) parentStats(c *gin.Context) {
 	value, err := strconv.ParseUint(c.Param("parentId"), 10, 64)
 	if err != nil {
@@ -412,6 +512,67 @@ func (h Handler) deleteActivityData(c *gin.Context) {
 	}
 
 	if err := h.runtime.Delete(uint(value)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
+func (h Handler) createCategory(c *gin.Context) {
+	var payload categoryRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	item, err := h.catalog.CreateCategory(category.Category{
+		Name:     payload.Name,
+		Slug:     payload.Slug,
+		Type:     payload.Type,
+		ParentID: payload.ParentID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"item": item})
+}
+
+func (h Handler) updateCategory(c *gin.Context) {
+	var payload categoryRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	value, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
+		return
+	}
+
+	item, err := h.catalog.UpdateCategory(category.Category{
+		ID:       uint(value),
+		Name:     payload.Name,
+		Slug:     payload.Slug,
+		Type:     payload.Type,
+		ParentID: payload.ParentID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"item": item})
+}
+
+func (h Handler) deleteCategory(c *gin.Context) {
+	value, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
+		return
+	}
+
+	if err := h.catalog.DeleteCategory(uint(value)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
