@@ -172,6 +172,15 @@
         </GlassCard>
       </div>
     </div>
+
+    <ConfirmDialog
+      :open="confirmDialogOpen"
+      :title="confirmDialogTitle"
+      :message="confirmDialogMessage"
+      :confirm-label="confirmDialogConfirmLabel"
+      @confirm="handleConfirmDialogConfirm"
+      @cancel="handleConfirmDialogCancel"
+    />
   </AppShell>
 </template>
 
@@ -182,6 +191,7 @@ import AppShell from '../../shared/ui/AppShell.vue'
 import GlassCard from '../../shared/ui/GlassCard.vue'
 import PillBadge from '../../shared/ui/PillBadge.vue'
 import ActionButton from '../../shared/ui/ActionButton.vue'
+import ConfirmDialog from '../../shared/ui/ConfirmDialog.vue'
 import MetricCard from '../../widgets/dashboard/MetricCard.vue'
 import AssignmentComposer from '../../features/assignment/AssignmentComposer.vue'
 import { readSession, clearSession } from '../../features/auth/session.js'
@@ -196,6 +206,11 @@ const activities = ref([])
 const assignments = ref([])
 const selectedSection = ref('overview')
 const isEditingKid = ref(false)
+const confirmDialogOpen = ref(false)
+const confirmDialogTitle = ref('Please confirm')
+const confirmDialogMessage = ref('')
+const confirmDialogConfirmLabel = ref('Confirm')
+let confirmResolver = null
 const kidForm = ref({
   id: null,
   name: '',
@@ -284,7 +299,12 @@ async function handleKidSubmit() {
 }
 
 async function deleteKidItem(kid) {
-  if (!confirm(`Delete kid "${kid.name}"? This will also remove their assignments and progress.`)) {
+  const ok = await requestConfirmation({
+    title: 'Delete kid',
+    message: `Delete kid "${kid.name}"? This will also remove their assignments and progress.`,
+    confirmLabel: 'Delete',
+  })
+  if (!ok) {
     return
   }
   try {
@@ -321,7 +341,12 @@ function summarizeKidStatus(kidId) {
 }
 
 async function deleteAssignmentItem(assignment) {
-  if (!confirm(`Delete assignment for ${assignment.kid.name}? This cannot be undone.`)) {
+  const ok = await requestConfirmation({
+    title: 'Delete assignment',
+    message: `Delete assignment for ${assignment.kid.name}? This cannot be undone.`,
+    confirmLabel: 'Delete',
+  })
+  if (!ok) {
     return
   }
   try {
@@ -336,6 +361,33 @@ async function deleteAssignmentItem(assignment) {
 function logout() {
   clearSession()
   router.push('/login')
+}
+
+function requestConfirmation({ title, message, confirmLabel = 'Confirm' }) {
+  confirmDialogTitle.value = title
+  confirmDialogMessage.value = message
+  confirmDialogConfirmLabel.value = confirmLabel
+  confirmDialogOpen.value = true
+
+  return new Promise((resolve) => {
+    confirmResolver = resolve
+  })
+}
+
+function handleConfirmDialogConfirm() {
+  confirmDialogOpen.value = false
+  if (confirmResolver) {
+    confirmResolver(true)
+    confirmResolver = null
+  }
+}
+
+function handleConfirmDialogCancel() {
+  confirmDialogOpen.value = false
+  if (confirmResolver) {
+    confirmResolver(false)
+    confirmResolver = null
+  }
 }
 </script>
 

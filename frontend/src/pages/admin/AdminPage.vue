@@ -262,6 +262,106 @@
         </GlassCard>
         </div>
       </template>
+
+      <template v-if="selectedSection === 'users'">
+        <div class="admin-workspace">
+          <GlassCard tag="section" class="admin-focus-card">
+            <div class="section-head">
+              <div>
+                <PillBadge class="eyebrow">Role Management</PillBadge>
+                <h2>Users and access levels</h2>
+              </div>
+              <ActionButton @click="startCreatingUser">➕ New User</ActionButton>
+            </div>
+
+            <div class="role-filter-row">
+              <button
+                v-for="item in roleFilterItems"
+                :key="item.key"
+                class="nav-pill role-pill"
+                type="button"
+                :class="{ active: roleFilter === item.key }"
+                @click="roleFilter = item.key"
+              >
+                <span>{{ item.label }}</span>
+                <strong>{{ item.count }}</strong>
+              </button>
+            </div>
+
+            <div class="assignment-list">
+              <article v-for="item in filteredUsers" :key="item.id" class="assignment-row category-row">
+                <div>
+                  <strong>{{ item.avatar || '👤' }} {{ item.name }}</strong>
+                  <p>
+                    <PillBadge class="status-chip">{{ item.role }}</PillBadge>
+                    <span class="muted">{{ item.preferredLang === 'id' ? 'Bahasa Indonesia' : 'English' }}</span>
+                  </p>
+                </div>
+                <div>
+                  <p class="muted">Parent ID</p>
+                  <strong>{{ item.parentId || '-' }}</strong>
+                </div>
+                <div class="category-actions">
+                  <button class="icon-button" type="button" title="Edit User" @click="editUser(item)">✏️</button>
+                  <button class="icon-button delete" type="button" title="Delete User" @click="deleteUserItem(item)">🗑️</button>
+                </div>
+              </article>
+            </div>
+          </GlassCard>
+
+        </div>
+      </template>
+
+      <AppModal
+        :open="isEditingUser"
+        :title="userForm.id ? 'Edit user' : 'Create user'"
+        subtitle="User Editor"
+        max-width="760px"
+        @close="cancelUserEditing"
+      >
+        <form class="admin-user-form" @submit.prevent="handleUserSubmit">
+          <label>
+            Name
+            <input v-model="userForm.name" type="text" required placeholder="e.g., Nadia" />
+          </label>
+          <label>
+            Role
+            <select v-model="userForm.role" required>
+              <option value="admin">admin</option>
+              <option value="parent">parent</option>
+              <option value="kid">kid</option>
+            </select>
+          </label>
+          <label>
+            Avatar
+            <input v-model="userForm.avatar" type="text" placeholder="e.g., 🧠" />
+          </label>
+          <label>
+            Preferred Language
+            <select v-model="userForm.preferredLang" required>
+              <option value="en">English</option>
+              <option value="id">Bahasa Indonesia</option>
+            </select>
+          </label>
+          <label>
+            Parent ID (kids only)
+            <input v-model="userForm.parentId" type="number" min="1" placeholder="Optional" />
+          </label>
+          <div class="admin-user-actions">
+            <ActionButton variant="ghost" type="button" @click="cancelUserEditing">Cancel</ActionButton>
+            <ActionButton type="submit">{{ userForm.id ? 'Update User' : 'Create User' }}</ActionButton>
+          </div>
+        </form>
+      </AppModal>
+
+      <ConfirmDialog
+        :open="confirmDialogOpen"
+        :title="confirmDialogTitle"
+        :message="confirmDialogMessage"
+        :confirm-label="confirmDialogConfirmLabel"
+        @confirm="handleConfirmDialogConfirm"
+        @cancel="handleConfirmDialogCancel"
+      />
     </div>
   </AppShell>
 </template>
@@ -273,27 +373,47 @@ import AppShell from '../../shared/ui/AppShell.vue'
 import GlassCard from '../../shared/ui/GlassCard.vue'
 import PillBadge from '../../shared/ui/PillBadge.vue'
 import ActionButton from '../../shared/ui/ActionButton.vue'
+import AppModal from '../../shared/ui/AppModal.vue'
+import ConfirmDialog from '../../shared/ui/ConfirmDialog.vue'
 import ActivityForm from '../../features/activity-management/ActivityForm.vue'
 import ActivityTemplates from '../../features/activity-management/ActivityTemplates.vue'
 import CategoryForm from '../../features/category-management/CategoryForm.vue'
 import { clearSession } from '../../features/auth/session.js'
 import { listCategories, createCategory, updateCategory, deleteCategory } from '../../entities/category/api.js'
 import { createActivity, listActivities, updateActivity } from '../../entities/activity/api.js'
+import { listUsers, createUser, updateUser, deleteUser } from '../../entities/user/api.js'
 
 const router = useRouter()
 const categories = ref([])
 const activities = ref([])
+const users = ref([])
 const selectedSection = ref('curriculum')
 const editingActivityId = ref(null)
 const editingCategoryId = ref(null)
+const isEditingUser = ref(false)
 const currentPage = ref(1)
 const selectedCurriculumPage = ref('management')
+const roleFilter = ref('all')
 const pageSize = 4
+const confirmDialogOpen = ref(false)
+const confirmDialogTitle = ref('Please confirm')
+const confirmDialogMessage = ref('')
+const confirmDialogConfirmLabel = ref('Confirm')
+let confirmResolver = null
+const userForm = ref({
+  id: null,
+  name: '',
+  role: 'parent',
+  avatar: '👤',
+  preferredLang: 'en',
+  parentId: '',
+})
 
 const sectionItems = [
   { key: 'curriculum', label: 'Curriculum', icon: '🛠️' },
   { key: 'categories', label: 'Categories', icon: '🗂️' },
   { key: 'analytics', label: 'Analytics', icon: '📈' },
+  { key: 'users', label: 'Users', icon: '👥' },
 ]
 const curriculumSubPages = [
   { key: 'management', label: 'Management', icon: '✍️' },
@@ -333,16 +453,39 @@ const visiblePages = computed(() => {
   return pages
 })
 
+const filteredUsers = computed(() => {
+  if (roleFilter.value === 'all') {
+    return users.value
+  }
+  return users.value.filter((item) => item.role === roleFilter.value)
+})
+
+const roleFilterItems = computed(() => {
+  const allCount = users.value.length
+  const adminCount = users.value.filter((item) => item.role === 'admin').length
+  const parentCount = users.value.filter((item) => item.role === 'parent').length
+  const kidCount = users.value.filter((item) => item.role === 'kid').length
+
+  return [
+    { key: 'all', label: 'All', count: allCount },
+    { key: 'admin', label: 'Admin', count: adminCount },
+    { key: 'parent', label: 'Parent', count: parentCount },
+    { key: 'kid', label: 'Kid', count: kidCount },
+  ]
+})
+
 onMounted(loadData)
 
 async function loadData() {
-  const [categoriesResponse, activitiesResponse] = await Promise.all([
+  const [categoriesResponse, activitiesResponse, usersResponse] = await Promise.all([
     listCategories(),
     listActivities(),
+    listUsers(),
   ])
 
   categories.value = categoriesResponse.items
   activities.value = activitiesResponse.items
+  users.value = usersResponse.items
 }
 
 async function createNewActivity(payload) {
@@ -389,6 +532,9 @@ function applyTemplate(template) {
 
 function selectSection(item) {
   selectedSection.value = item.key
+  if (item.key !== 'users') {
+    isEditingUser.value = false
+  }
 }
 
 function editActivity(activity) {
@@ -431,7 +577,12 @@ function editCategory(category) {
 }
 
 async function deleteCategoryItem(category) {
-  if (!confirm(`Delete category "${category.name}"? This cannot be undone.`)) {
+  const ok = await requestConfirmation({
+    title: 'Delete category',
+    message: `Delete category "${category.name}"? This cannot be undone.`,
+    confirmLabel: 'Delete',
+  })
+  if (!ok) {
     return
   }
   try {
@@ -474,6 +625,103 @@ function parentCategoryName(parentId) {
 function logout() {
   clearSession()
   router.push('/login')
+}
+
+function startCreatingUser() {
+  userForm.value = {
+    id: null,
+    name: '',
+    role: 'parent',
+    avatar: '👤',
+    preferredLang: 'en',
+    parentId: '',
+  }
+  isEditingUser.value = true
+}
+
+function editUser(item) {
+  userForm.value = {
+    id: item.id,
+    name: item.name,
+    role: item.role,
+    avatar: item.avatar || '👤',
+    preferredLang: item.preferredLang || 'en',
+    parentId: item.parentId || '',
+  }
+  isEditingUser.value = true
+}
+
+async function handleUserSubmit() {
+  const parentIdValue = String(userForm.value.parentId || '').trim()
+  const payload = {
+    name: userForm.value.name,
+    role: userForm.value.role,
+    avatar: userForm.value.avatar,
+    preferredLang: userForm.value.preferredLang,
+    ...(userForm.value.role === 'kid' && parentIdValue ? { parentId: Number(parentIdValue) } : {}),
+  }
+
+  try {
+    if (userForm.value.id) {
+      await updateUser(userForm.value.id, payload)
+    } else {
+      await createUser(payload)
+    }
+    await loadData()
+    isEditingUser.value = false
+  } catch (error) {
+    console.error('Error saving user:', error)
+    alert('Failed to save user: ' + error.message)
+  }
+}
+
+async function deleteUserItem(item) {
+  const ok = await requestConfirmation({
+    title: 'Delete user',
+    message: `Delete user "${item.name}"? This cannot be undone.`,
+    confirmLabel: 'Delete',
+  })
+  if (!ok) {
+    return
+  }
+  try {
+    await deleteUser(item.id)
+    await loadData()
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    alert('Failed to delete user: ' + error.message)
+  }
+}
+
+function cancelUserEditing() {
+  isEditingUser.value = false
+}
+
+function requestConfirmation({ title, message, confirmLabel = 'Confirm' }) {
+  confirmDialogTitle.value = title
+  confirmDialogMessage.value = message
+  confirmDialogConfirmLabel.value = confirmLabel
+  confirmDialogOpen.value = true
+
+  return new Promise((resolve) => {
+    confirmResolver = resolve
+  })
+}
+
+function handleConfirmDialogConfirm() {
+  confirmDialogOpen.value = false
+  if (confirmResolver) {
+    confirmResolver(true)
+    confirmResolver = null
+  }
+}
+
+function handleConfirmDialogCancel() {
+  confirmDialogOpen.value = false
+  if (confirmResolver) {
+    confirmResolver(false)
+    confirmResolver = null
+  }
 }
 </script>
 
@@ -737,6 +985,74 @@ function logout() {
   align-items: flex-start;
 }
 
+.role-filter-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 0.95rem;
+}
+
+.role-pill {
+  border: 1px solid rgba(24, 78, 122, 0.12);
+  border-radius: 14px;
+  min-height: 54px;
+  padding: 0.65rem 0.75rem;
+  background: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.role-pill strong {
+  font-size: 1rem;
+}
+
+.role-pill.active {
+  border-color: rgba(22, 183, 214, 0.45);
+  box-shadow: 0 10px 20px rgba(22, 183, 214, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.admin-user-form {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-user-form label {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 700;
+}
+
+.admin-user-form input,
+.admin-user-form select {
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(24, 78, 122, 0.14);
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.admin-user-form input:focus,
+.admin-user-form select:focus {
+  outline: none;
+  border-color: rgba(22, 183, 214, 0.5);
+  box-shadow: 0 0 0 3px rgba(22, 183, 214, 0.14);
+}
+
+.admin-user-actions {
+  grid-column: 1 / -1;
+  margin-top: 0.35rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
 .metric-card strong {
   display: block;
   margin-top: 0.4rem;
@@ -776,6 +1092,10 @@ function logout() {
     width: 100%;
     min-width: 0;
   }
+
+  .role-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 820px) {
@@ -798,6 +1118,14 @@ function logout() {
 
   .assignment-row {
     padding: 0.85rem;
+  }
+
+  .admin-user-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-user-actions {
+    justify-content: stretch;
   }
 }
 </style>
