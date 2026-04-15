@@ -604,9 +604,24 @@ button:focus-visible {
 .activity-ide-sidebar {
   padding: 1rem;
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 1rem;
   min-height: 0;
-  overflow: auto;
+  height: 100%;
+  overflow: hidden;
+}
+
+.activity-ide-sidebar > :nth-child(n+3) {
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.activity-ide-scrollable {
+  display: grid;
+  gap: 1rem;
+  min-height: 0;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 

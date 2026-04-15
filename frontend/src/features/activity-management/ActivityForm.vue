@@ -23,9 +23,10 @@
         </button>
       </div>
 
-      <APIReference />
+      <div class="activity-ide-scrollable">
+        <APIReference />
 
-      <div class="activity-meta-panel">
+        <div class="activity-meta-panel">
         <label>
           Title
           <input v-model="form.title" required />
@@ -68,6 +69,7 @@
             <input v-model="form.icon" placeholder="🎨" />
           </label>
         </div>
+      </div>
       </div>
     </section>
 
