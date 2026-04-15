@@ -60,7 +60,7 @@
           />
         </GlassCard>
 
-        <GlassCard v-if="selectedCurriculumPage === 'library'" tag="section">
+        <GlassCard v-if="selectedCurriculumPage === 'library'" tag="section" class="admin-focus-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Activity Library</PillBadge>
@@ -91,9 +91,13 @@
                 <strong>{{ activity.icon }} {{ activity.title }}</strong>
                 <p class="muted">{{ activity.description }}</p>
               </div>
-              <span>{{ activity.category.name }}</span>
-              <span>{{ activity.difficulty }}</span>
-              <span>{{ activity.ageGroup }}</span>
+              <span class="category-tag">{{ activity.category?.name || 'Uncategorized' }}</span>
+              <div class="badge-group">
+                <PillBadge class="status-chip">{{ activity.difficulty }}</PillBadge>
+              </div>
+              <div class="badge-group">
+                <PillBadge class="status-chip">{{ activity.ageGroup }}</PillBadge>
+              </div>
               <div class="admin-row-actions">
                 <ActionButton variant="ghost" @click="editActivity(activity)">Edit</ActionButton>
               </div>
@@ -833,7 +837,7 @@ function handleConfirmDialogCancel() {
 }
 
 .admin-table-head {
-  padding: 0 0.5rem 0.5rem;
+  padding: 0 1rem 0.75rem;
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 700;
@@ -845,6 +849,22 @@ function handleConfirmDialogCancel() {
   border: 1px solid rgba(24, 78, 122, 0.08);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.58);
+  transition: all 200ms ease;
+}
+
+.category-tag {
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(22, 183, 214, 0.08);
+  padding: 0.35rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  display: inline-block;
+}
+
+.badge-group {
+  display: flex;
+  align-items: center;
 }
 
 .admin-table-row.active {

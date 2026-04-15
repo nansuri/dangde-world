@@ -9,20 +9,20 @@
     <div class="page-workspace kids-workspace">
       <div class="kids-dashboard" :class="{ 'kids-dashboard-split': isTabletLandscape }">
         <GlassCard tag="section" class="hero-panel kids-hero-panel">
-          <div>
+          <div class="kids-hero-content">
             <PillBadge class="eyebrow">Hi {{ session?.name }}</PillBadge>
             <h2>{{ selectedCategory.label }} adventures</h2>
-            <p>Choose a game from the left, then continue the matching activity here.</p>
+            <p class="kids-hero-desc">Ready to play? Choose a game to start your learning quest!</p>
           </div>
 
           <div class="kids-hero-badges">
             <div class="kids-hero-chip">
-              <span>Assignments</span>
-              <strong>{{ filteredAssignments.length }}</strong>
+              <span class="chip-label">Assignments</span>
+              <strong class="chip-value">{{ filteredAssignments.length }}</strong>
             </div>
             <div class="kids-hero-chip">
-              <span>Done</span>
-              <strong>{{ completedAssignments }}</strong>
+              <span class="chip-label">Done</span>
+              <strong class="chip-value">{{ completedAssignments }}</strong>
             </div>
           </div>
         </GlassCard>
@@ -31,20 +31,26 @@
           <template v-if="featuredAssignment">
             <div class="kids-detail-top">
               <span class="activity-icon kids-featured-icon">{{ featuredAssignment.activity.icon }}</span>
-              <PillBadge class="status-chip">{{ featuredAssignment.status.replace('_', ' ') }}</PillBadge>
-            </div>
-            <h3>{{ featuredAssignment.activity.title }}</h3>
-            <p>{{ featuredAssignment.activity.description }}</p>
-            <p class="muted">{{ featuredAssignment.activity.prompt }}</p>
-            <div class="progress-row">
-              <div class="progress-track">
-                <div class="progress-fill" :style="{ width: `${featuredAssignment.progress}%` }"></div>
+              <div class="kids-detail-meta">
+                <PillBadge class="status-chip">{{ featuredAssignment.status.replace('_', ' ') }}</PillBadge>
+                <span class="difficulty-tag">{{ featuredAssignment.activity.difficulty }}</span>
               </div>
-              <strong>{{ featuredAssignment.progress }}%</strong>
             </div>
-            <div class="card-actions">
-              <ActionButton @click="playActivity(featuredAssignment)">
-                Play Featured
+            <h3 class="kids-featured-title">{{ featuredAssignment.activity.title }}</h3>
+            <p class="kids-featured-desc">{{ featuredAssignment.activity.description }}</p>
+            
+            <div class="kids-progress-shell">
+              <div class="progress-row">
+                <div class="progress-track">
+                  <div class="progress-fill" :style="{ width: `${featuredAssignment.progress}%` }"></div>
+                </div>
+                <strong>{{ featuredAssignment.progress }}%</strong>
+              </div>
+            </div>
+
+            <div class="card-actions kids-featured-actions">
+              <ActionButton class="play-button" @click="playActivity(featuredAssignment)">
+                Start Adventure
               </ActionButton>
               <ActionButton variant="ghost" @click="advance(featuredAssignment)">
                 Quick Progress
@@ -93,12 +99,12 @@
             </div>
           </GlassCard>
 
-          <GlassCard v-if="featuredAssignment && gridAssignments.length === 0" class="activity-card empty-state-card kids-empty-panel">
+          <GlassCard v-if="featuredAssignment && gridAssignments.length === 0" class="activity-card empty-state-card kids-mini-empty">
              <div class="activity-card-top">
-              <span class="activity-icon">✨</span>
+              <span class="activity-icon small-icon">✨</span>
+              <p class="mini-desc">More adventures await!</p>
             </div>
-            <h3>More adventures await!</h3>
-            <p>You are currently focusing on the featured activity above.</p>
+            <p class="muted small-text">You are currently focusing on the featured activity above.</p>
           </GlassCard>
         </section>
       </div>
@@ -251,13 +257,12 @@ function logout() {
 
 .kids-dashboard-split .kids-hero-panel {
   grid-area: hero;
-  min-height: 220px;
+  min-height: auto;
 }
 
 .kids-dashboard-split .kids-detail-panel {
   grid-area: detail;
   align-self: stretch;
-  min-height: 320px;
 }
 
 .kids-dashboard-split .kids-card-grid {
@@ -271,68 +276,112 @@ function logout() {
 
 .kids-hero-panel {
   display: grid;
-  gap: 1.25rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(255, 248, 220, 0.75));
 }
 
-.kids-hero-panel > * {
-  min-width: 0;
+.kids-hero-content h2 {
+  font-size: 2.2rem;
+  color: #ff7a18;
+  text-shadow: 0 2px 4px rgba(255, 122, 24, 0.1);
+}
+
+.kids-hero-desc {
+  font-size: 1.1rem;
+  color: var(--muted);
+  max-width: 40ch;
 }
 
 .kids-hero-badges {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
   gap: 1rem;
-}
-
-.kids-hero-badges > * {
-  min-width: 0;
 }
 
 .kids-hero-chip {
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 1rem 1.1rem;
+  background: white;
+  border: 2px solid rgba(255, 122, 24, 0.1);
+  border-radius: 20px;
+  padding: 0.8rem 1.2rem;
+  text-align: center;
+  min-width: 100px;
+  box-shadow: 0 8px 20px rgba(255, 122, 24, 0.05);
 }
 
-.kids-hero-chip span {
+.chip-label {
   display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--muted);
-  word-break: break-word;
+  font-weight: 700;
 }
 
-.kids-hero-chip strong {
+.chip-value {
   display: block;
-  margin-top: 0.35rem;
-  font-size: 2rem;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  font-size: 1.8rem;
+  color: #ff7a18;
 }
 
 .kids-detail-panel {
-  padding: 1.5rem;
+  padding: 1.8rem;
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
   min-width: 0;
-}
-
-.kids-detail-panel h3,
-.kids-detail-panel p {
-  min-width: 0;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  border: 2px solid rgba(22, 183, 214, 0.15);
 }
 
 .kids-detail-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
 }
 
 .kids-featured-icon {
-  font-size: 3rem;
+  font-size: 4rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.kids-detail-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.difficulty-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--secondary);
+  text-transform: uppercase;
+  background: rgba(22, 183, 214, 0.1);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+}
+
+.kids-featured-title {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.kids-featured-desc {
+  font-size: 1.1rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.kids-progress-shell {
+  background: rgba(255, 255, 255, 0.5);
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 78, 122, 0.05);
+}
+
+.play-button {
+  flex: 1.5;
+  font-size: 1.1rem !important;
+  box-shadow: 0 10px 25px rgba(255, 122, 24, 0.3) !important;
 }
 
 .card-grid {
@@ -356,19 +405,43 @@ function logout() {
   overflow: hidden;
 }
 
-.kids-activity-card h3,
+.kids-activity-card h3 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
 .kids-activity-card p {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  font-size: 0.95rem;
+  color: var(--muted);
 }
 
 .kids-empty-panel {
   min-height: 220px;
+}
+
+.kids-mini-empty {
+  min-height: auto;
+  padding: 1rem 1.25rem;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgba(24, 78, 122, 0.1);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.small-icon {
+  font-size: 1.4rem;
+}
+
+.mini-desc {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.small-text {
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
 }
 
 .activity-card-top,
@@ -409,13 +482,26 @@ function logout() {
   background: rgba(255, 255, 255, 0.55);
 }
 
+@media (max-width: 1180px) {
+  .kids-hero-panel {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .kids-hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .kids-hero-badges {
+    justify-content: center;
+  }
+}
+
 @media (max-width: 820px) {
   .hero-panel {
     border-radius: 22px;
-  }
-
-  .kids-hero-panel {
-    grid-template-columns: 1fr;
   }
 
   .kids-hero-badges {
