@@ -129,7 +129,7 @@
 
       <template v-if="selectedSection === 'categories'">
         <div class="admin-workspace">
-        <GlassCard v-if="!editingCategoryId" tag="section">
+        <GlassCard v-if="!editingCategoryId" tag="section" class="admin-focus-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Categories</PillBadge>
@@ -165,7 +165,7 @@
           </div>
         </GlassCard>
 
-        <GlassCard v-if="rootCategories.length > 0 && !editingCategoryId" tag="section">
+        <GlassCard v-if="rootCategories.length > 0 && !editingCategoryId" tag="section" class="admin-focus-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Sub-Categories</PillBadge>
@@ -201,7 +201,7 @@
           </div>
         </GlassCard>
 
-        <GlassCard v-if="editingCategoryId" tag="section">
+        <GlassCard v-if="editingCategoryId" tag="section" class="admin-focus-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Category Editor</PillBadge>
@@ -221,26 +221,26 @@
 
       <template v-if="selectedSection === 'analytics'">
         <div class="admin-workspace">
-        <section class="metrics-grid">
-          <GlassCard tag="article" class="metric-card">
+        <section class="metrics-grid analytics-metrics-grid">
+          <GlassCard tag="article" class="metric-card analytics-metric-card">
             <p>Activities</p>
             <strong>{{ activities.length }}</strong>
           </GlassCard>
-          <GlassCard tag="article" class="metric-card">
+          <GlassCard tag="article" class="metric-card analytics-metric-card">
             <p>Root Categories</p>
             <strong>{{ rootCategories.length }}</strong>
           </GlassCard>
-          <GlassCard tag="article" class="metric-card">
+          <GlassCard tag="article" class="metric-card analytics-metric-card">
             <p>Sub-Categories</p>
             <strong>{{ subCategories.length }}</strong>
           </GlassCard>
-          <GlassCard tag="article" class="metric-card">
+          <GlassCard tag="article" class="metric-card analytics-metric-card">
             <p>Code-Based</p>
             <strong>{{ codedActivities }}</strong>
           </GlassCard>
         </section>
 
-        <GlassCard tag="section">
+        <GlassCard tag="section" class="admin-focus-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Coverage</PillBadge>
@@ -248,7 +248,7 @@
             </div>
           </div>
           <div class="assignment-list">
-            <article v-for="category in subCategories" :key="category.id" class="assignment-row">
+            <article v-for="category in subCategories" :key="category.id" class="assignment-row analytics-row">
               <div>
                 <strong>{{ category.name }}</strong>
                 <p>{{ parentCategoryName(category.parentId) }}</p>
@@ -504,6 +504,10 @@ function logout() {
   overflow: visible;
 }
 
+.admin-focus-card {
+  padding: 1.2rem 1.25rem;
+}
+
 .admin-workspace-management {
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -553,7 +557,12 @@ function logout() {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.section-head h2 {
+  margin: 0.3rem 0 0;
+  line-height: 1.2;
 }
 
 .admin-library-summary {
@@ -632,20 +641,31 @@ function logout() {
 
 .assignment-list {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .assignment-row {
-  padding: 1rem 0;
-  border-bottom: 1px solid rgba(24, 78, 122, 0.08);
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(24, 78, 122, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.56);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
 
-.assignment-row:last-child {
-  border-bottom: 0;
+.assignment-row strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.assignment-row p {
+  margin: 0;
+}
+
+.assignment-row .muted {
+  font-size: 0.88rem;
 }
 
 .category-row {
@@ -659,18 +679,23 @@ function logout() {
 }
 
 .icon-button {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(24, 78, 122, 0.12);
+  font-size: 1.1rem;
   cursor: pointer;
-  padding: 0.5rem;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   transition: all 200ms;
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 .icon-button:hover {
-  background: rgba(0, 0, 0, 0.08);
-  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(24, 78, 122, 0.12);
 }
 
 .icon-button.delete:hover {
@@ -685,6 +710,31 @@ function logout() {
 
 .metric-card {
   padding: 1.2rem;
+}
+
+.analytics-metrics-grid {
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+}
+
+.analytics-metric-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(24, 78, 122, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.52));
+}
+
+.analytics-metric-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #16b7d6, #6dd7ff);
+}
+
+.analytics-row {
+  align-items: flex-start;
 }
 
 .metric-card strong {
@@ -733,9 +783,21 @@ function logout() {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-focus-card {
+    padding: 1rem;
+  }
+
   .section-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .section-head h2 {
+    margin-top: 0.2rem;
+  }
+
+  .assignment-row {
+    padding: 0.85rem;
   }
 }
 </style>

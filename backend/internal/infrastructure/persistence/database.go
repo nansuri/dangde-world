@@ -15,9 +15,13 @@ func Connect(cfg config.Config) (*gorm.DB, error) {
 	)
 
 	if cfg.DatabaseURL != "" {
-		db, err = gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{})
+		db, err = gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
+			DisableForeignKeyConstraintWhenMigrating: true,
+		})
 	} else {
-		db, err = gorm.Open(sqlite.Open("dangde-world.db"), &gorm.Config{})
+		db, err = gorm.Open(sqlite.Open("dangde-world.db"), &gorm.Config{
+			DisableForeignKeyConstraintWhenMigrating: true,
+		})
 	}
 	if err != nil {
 		return nil, err

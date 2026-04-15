@@ -15,7 +15,7 @@
           <MetricCard label="Average Progress" :value="`${stats.averageProgress}%`" />
         </section>
 
-        <GlassCard v-if="selectedSection === 'overview'" tag="section">
+        <GlassCard v-if="selectedSection === 'overview'" tag="section" class="parents-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Family Snapshot</PillBadge>
@@ -39,7 +39,7 @@
           </div>
         </GlassCard>
 
-        <GlassCard v-if="selectedSection === 'kids' && !isEditingKid" tag="section">
+        <GlassCard v-if="selectedSection === 'kids' && !isEditingKid" tag="section" class="parents-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Family Management</PillBadge>
@@ -71,7 +71,7 @@
           </div>
         </GlassCard>
 
-        <GlassCard v-if="selectedSection === 'kids' && isEditingKid" tag="section">
+        <GlassCard v-if="selectedSection === 'kids' && isEditingKid" tag="section" class="parents-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Profile Editor</PillBadge>
@@ -102,14 +102,14 @@
               </select>
             </label>
 
-            <div class="card-actions" style="grid-column: 1 / -1; margin-top: 1rem; justify-content: flex-end;">
+            <div class="card-actions profile-actions">
               <ActionButton variant="ghost" @click="isEditingKid = false">Cancel</ActionButton>
               <ActionButton type="submit">{{ kidForm.id ? 'Update Kid' : 'Add Kid' }}</ActionButton>
             </div>
           </form>
         </GlassCard>
 
-        <GlassCard v-if="selectedSection === 'assignments'" tag="section">
+        <GlassCard v-if="selectedSection === 'assignments'" tag="section" class="parents-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Assign Learning</PillBadge>
@@ -124,7 +124,7 @@
           />
         </GlassCard>
 
-        <GlassCard v-if="selectedSection === 'assignments'" tag="section">
+        <GlassCard v-if="selectedSection === 'assignments'" tag="section" class="parents-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Current Progress</PillBadge>
@@ -150,7 +150,7 @@
           </div>
         </GlassCard>
 
-        <GlassCard v-if="selectedSection === 'reports'" tag="section">
+        <GlassCard v-if="selectedSection === 'reports'" tag="section" class="parents-card">
           <div class="section-head">
             <div>
               <PillBadge class="eyebrow">Reports</PillBadge>
@@ -366,6 +366,10 @@ function logout() {
   overflow: visible;
 }
 
+.parents-card {
+  padding: 1.2rem 1.25rem;
+}
+
 .metrics-grid {
   display: grid;
   gap: 1rem;
@@ -377,25 +381,41 @@ function logout() {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.section-head h2 {
+  margin: 0.35rem 0 0;
+  line-height: 1.2;
 }
 
 .assignment-list {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .assignment-row {
-  padding: 1rem 0;
-  border-bottom: 1px solid rgba(24, 78, 122, 0.08);
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(24, 78, 122, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.56);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
 
-.assignment-row:last-child {
-  border-bottom: 0;
+.assignment-row strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.assignment-row p {
+  margin: 0;
+}
+
+.assignment-row .muted {
+  font-size: 0.88rem;
 }
 
 .category-row {
@@ -409,18 +429,23 @@ function logout() {
 }
 
 .icon-button {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(24, 78, 122, 0.12);
+  font-size: 1.1rem;
   cursor: pointer;
-  padding: 0.5rem;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   transition: all 200ms;
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 .icon-button:hover {
-  background: rgba(0, 0, 0, 0.08);
-  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(24, 78, 122, 0.12);
 }
 
 .icon-button.delete:hover {
@@ -439,10 +464,33 @@ label {
   font-weight: 700;
 }
 
+label input,
+label select {
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(24, 78, 122, 0.14);
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+label input:focus,
+label select:focus {
+  outline: none;
+  border-color: rgba(22, 183, 214, 0.5);
+  box-shadow: 0 0 0 3px rgba(22, 183, 214, 0.14);
+}
+
 .card-actions {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.profile-actions {
+  grid-column: 1 / -1;
+  margin-top: 0.65rem;
+  justify-content: flex-end;
 }
 
 @media (max-width: 820px) {
@@ -450,13 +498,29 @@ label {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .parents-card {
+    padding: 1rem;
+  }
+
   .section-head {
     align-items: flex-start;
     flex-direction: column;
   }
 
+  .section-head h2 {
+    margin-top: 0.25rem;
+  }
+
+  .assignment-row {
+    padding: 0.85rem;
+  }
+
   .activity-form {
     grid-template-columns: 1fr;
+  }
+
+  .profile-actions {
+    justify-content: stretch;
   }
 }
 </style>
